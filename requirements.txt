@@ -1,0 +1,8 @@
+flask
+flask-cors
+razorpay
+twilio
+psycopg2-binary
+cloudinary
+gunicorn
+bcrypt
