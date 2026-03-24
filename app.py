@@ -108,8 +108,6 @@ def register():
     user = dict(cur.fetchone())
     conn.commit(); cur.close(); conn.close()
     return jsonify({"user": user}), 201
-
-
 @app.route("/auth/login", methods=["POST"])
 def login():
     data     = request.json
