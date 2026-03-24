@@ -30,7 +30,6 @@ CANTEEN_NUMBER = "whatsapp:+919944001925"   # replace with canteen number
 # ── Admin password (set this in Render env vars) ──────────────────────────────
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "canteen@admin123")
 
-
 # ── DB ────────────────────────────────────────────────────────────────────────
 def get_db():
     return psycopg2.connect(os.environ.get("DATABASE_URL"))
