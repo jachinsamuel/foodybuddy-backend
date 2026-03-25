@@ -1,20 +1,28 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
-from db import init_db
-
-from auth import auth_routes
-from payments import payment_routes
+from config import cloudinary
+from database import init_db
+from auth_routes import register_auth_routes
+from menu_routes import register_menu_routes
+from order_routes import register_order_routes
+from payment_routes import register_payment_routes
+from admin_routes import register_admin_routes
 
 app = Flask(__name__)
 CORS(app)
 
-app.register_blueprint(auth_routes)
-app.register_blueprint(payment_routes)
+# Register all route modules
+register_auth_routes(app)
+register_menu_routes(app)
+register_order_routes(app)
+register_payment_routes(app)
+register_admin_routes(app)
 
 @app.route("/")
-def index():
-    return {"status":"Foody Buddy API running!"}
+def index(): 
+    return jsonify({"status":"Foody Buddy API running!"})
 
+# Initialize database
 init_db()
 
 if __name__ == "__main__":
