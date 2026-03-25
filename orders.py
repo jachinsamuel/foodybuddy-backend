@@ -90,7 +90,10 @@ def place_cash_order():
 
     _send_wa_customer({**data, "razorpay_order_id": order_id})
     _send_wa_canteen({**data,  "razorpay_order_id": order_id})
-    return jsonify({"success": True,"order_id": order_id})
+    return jsonify({
+    "success": True,
+    "order_id": order_id
+}), 200
 
 
 # ── User order history ────────────────────────────────────────────────────────
