@@ -22,7 +22,7 @@ twilio_client  = TwilioClient(
     os.environ.get("TWILIO_AUTH_TOKEN")
 )
 TWILIO_NUMBER  = "whatsapp:+14155238886"
-CANTEEN_NUMBER = "whatsapp:+91XXXXXXXXXX"   # replace with canteen number
+CANTEEN_NUMBER = "whatsapp:+919944001925"
 
 
 # ── Create Razorpay order ─────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ def place_cash_order():
 
     _send_wa_customer({**data, "razorpay_order_id": order_id})
     _send_wa_canteen({**data,  "razorpay_order_id": order_id})
-    return jsonify({"status": "success", "order_id": order_id})
+    return jsonify({"success": True,"order_id": order_id})
 
 
 # ── User order history ────────────────────────────────────────────────────────
