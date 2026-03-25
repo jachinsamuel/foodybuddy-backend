@@ -3,23 +3,17 @@ from flask_cors import CORS
 from db import init_db
 
 from auth import auth_routes
-from menu import menu_routes
-from orders import order_routes
 from payments import payment_routes
-from admin import admin_routes
 
 app = Flask(__name__)
 CORS(app)
 
 app.register_blueprint(auth_routes)
-app.register_blueprint(menu_routes)
-app.register_blueprint(order_routes)
 app.register_blueprint(payment_routes)
-app.register_blueprint(admin_routes)
 
 @app.route("/")
-def home():
-    return {"status": "Foody Buddy API running!"}
+def index():
+    return {"status":"Foody Buddy API running!"}
 
 init_db()
 

@@ -4,9 +4,7 @@ def get_db():
     return psycopg2.connect(os.environ.get("DATABASE_URL"))
 
 def init_db():
-    conn = get_db()
-    cur = conn.cursor()
-
+    conn = get_db(); cur = conn.cursor()
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -16,7 +14,6 @@ def init_db():
         role TEXT NOT NULL DEFAULT 'user',
         created_at TIMESTAMP DEFAULT NOW()
     );
-
     CREATE TABLE IF NOT EXISTS menu_items (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
@@ -27,7 +24,6 @@ def init_db():
         available BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT NOW()
     );
-
     CREATE TABLE IF NOT EXISTS orders (
         id SERIAL PRIMARY KEY,
         order_id TEXT UNIQUE NOT NULL,
@@ -41,7 +37,4 @@ def init_db():
         created_at TIMESTAMP DEFAULT NOW()
     );
     """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    conn.commit(); cur.close(); conn.close()

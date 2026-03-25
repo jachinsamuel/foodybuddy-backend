@@ -1,6 +1,4 @@
-import os
-import razorpay
-import cloudinary
+import os, razorpay, cloudinary
 from twilio.rest import Client as TwilioClient
 
 cloudinary.config(
@@ -14,11 +12,7 @@ razorpay_client = razorpay.Client(auth=(
     os.environ.get("RAZORPAY_KEY_SECRET")
 ))
 
-twilio_client = TwilioClient(
-    os.environ.get("TWILIO_ACCOUNT_SID"),
-    os.environ.get("TWILIO_AUTH_TOKEN")
-)
-
+twilio_client  = TwilioClient(os.environ.get("TWILIO_ACCOUNT_SID"), os.environ.get("TWILIO_AUTH_TOKEN"))
 TWILIO_NUMBER = "whatsapp:+14155238886"
 CANTEEN_NUMBER = "whatsapp:+919944001925"
 
