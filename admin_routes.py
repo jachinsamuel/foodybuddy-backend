@@ -32,3 +32,11 @@ def register_admin_routes(app):
         conn=get_db(); cur=conn.cursor()
         cur.execute("DELETE FROM orders WHERE order_id=%s",(order_id,))
         conn.commit(); cur.close(); conn.close(); return jsonify({"status":"cancelled"})
+
+    @app.route("/admin/clear-history", methods=["POST"])
+    def clear_history():
+        conn=get_db(); cur=conn.cursor()
+        cur.execute("DELETE FROM orders WHERE status='done'")
+        deleted = cur.rowcount
+        conn.commit(); cur.close(); conn.close()
+        return jsonify({"status": "cleared", "deleted": deleted})
