@@ -14,7 +14,8 @@ def register_admin_routes(app):
     @app.route("/admin/history", methods=["GET"])
     def get_history():
         conn=get_db(); cur=conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT * FROM orders WHERE status='done' ORDER BY created_at DESC LIMIT 50")
+        # Only show orders not hidden by admin
+        cur.execute("SELECT * FROM orders WHERE status='done' AND hidden_from_admin=FALSE ORDER BY created_at DESC LIMIT 50")
         orders=cur.fetchall(); cur.close(); conn.close(); return jsonify(orders)
 
     @app.route("/admin/orders/<order_id>/status", methods=["POST"])
@@ -36,7 +37,8 @@ def register_admin_routes(app):
     @app.route("/admin/clear-history", methods=["POST"])
     def clear_history():
         conn=get_db(); cur=conn.cursor()
-        cur.execute("DELETE FROM orders WHERE status='done'")
-        deleted = cur.rowcount
+        # Just hide from admin view — students keep their full history
+        cur.execute("UPDATE orders SET hidden_from_admin=TRUE WHERE status='done' AND hidden_from_admin=FALSE")
+        hidden = cur.rowcount
         conn.commit(); cur.close(); conn.close()
-        return jsonify({"status": "cleared", "deleted": deleted})
+        return jsonify({"status": "cleared", "deleted": hidden})

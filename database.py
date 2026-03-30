@@ -27,16 +27,18 @@ def init_db():
             created_at TIMESTAMP DEFAULT NOW()
         );
         CREATE TABLE IF NOT EXISTS orders (
-            id         SERIAL PRIMARY KEY,
-            order_id   TEXT    UNIQUE NOT NULL,
-            payment_id TEXT,
-            name       TEXT    NOT NULL,
-            phone      TEXT    NOT NULL,
-            items      JSONB   NOT NULL,
-            total      INTEGER NOT NULL,
-            token_type TEXT    NOT NULL,
-            status     TEXT    NOT NULL DEFAULT 'new',
-            created_at TIMESTAMP DEFAULT NOW()
+            id                SERIAL PRIMARY KEY,
+            order_id          TEXT    UNIQUE NOT NULL,
+            payment_id        TEXT,
+            name              TEXT    NOT NULL,
+            phone             TEXT    NOT NULL,
+            items             JSONB   NOT NULL,
+            total             INTEGER NOT NULL,
+            token_type        TEXT    NOT NULL,
+            status            TEXT    NOT NULL DEFAULT 'new',
+            hidden_from_admin BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at        TIMESTAMP DEFAULT NOW()
         );
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS hidden_from_admin BOOLEAN NOT NULL DEFAULT FALSE;
     """)
     conn.commit(); cur.close(); conn.close()
