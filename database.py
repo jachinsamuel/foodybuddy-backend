@@ -26,6 +26,13 @@ def init_db():
             available  BOOLEAN NOT NULL DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT NOW()
         );
+        CREATE TABLE IF NOT EXISTS menu_addons (
+            id           SERIAL PRIMARY KEY,
+            menu_item_id INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+            name         TEXT    NOT NULL,
+            price        INTEGER NOT NULL DEFAULT 0,
+            created_at   TIMESTAMP DEFAULT NOW()
+        );
         CREATE TABLE IF NOT EXISTS orders (
             id                SERIAL PRIMARY KEY,
             order_id          TEXT    UNIQUE NOT NULL,
