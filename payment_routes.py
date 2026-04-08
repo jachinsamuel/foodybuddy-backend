@@ -11,6 +11,13 @@ def register_payment_routes(app):
     def place_upi_order():
         data = request.json
         order_id = f"FB{random.randint(10000,99999)}"
+        # For UPI, just return order ID - don't create order yet (user must confirm payment)
+        return jsonify({"status": "success", "order_id": order_id})
+
+    @app.route("/confirm-upi-payment", methods=["POST"])
+    def confirm_upi_payment():
+        data = request.json
+        order_id = data.get("order_id")
         token_type = data.get("token_type") or data.get("tokenType", "dine-in")
 
         conn = get_db(); cur = conn.cursor()
