@@ -63,9 +63,12 @@ def register_menu_routes(app):
             return jsonify({"error": "Missing fields"}), 400
 
         import json
+        print(f"[ADD_ITEM] Raw addons field: {repr(addons)}")
         try:
             addons_list = json.loads(addons)   # [{name, price}, ...]
-        except Exception:
+            print(f"[ADD_ITEM] Parsed addons_list: {addons_list}")
+        except Exception as e:
+            print(f"[ADD_ITEM] JSON parse error: {e}")
             addons_list = []
 
         image_url = None
@@ -80,21 +83,27 @@ def register_menu_routes(app):
         )
         item = cur.fetchone()
         item_id = item["id"]
+        print(f"[ADD_ITEM] Created item {item_id}")
 
         # insert addons
         for addon in addons_list:
             if addon.get("name","").strip():
+                print(f"[ADD_ITEM] Inserting addon: {addon}")
                 cur.execute(
                     "INSERT INTO menu_addons (menu_item_id, name, price) VALUES (%s,%s,%s)",
                     (item_id, addon["name"].strip(), int(addon.get("price", 0)))
                 )
+                print(f"[ADD_ITEM] Inserted successfully")
 
         conn.commit()
+        print(f"[ADD_ITEM] Committed transaction")
 
         # fetch addons back
         cur.execute("SELECT * FROM menu_addons WHERE menu_item_id=%s ORDER BY id", (item_id,))
+        fetched = cur.fetchall()
+        print(f"[ADD_ITEM] Fetched {len(fetched)} addons: {fetched}")
         item = dict(item)
-        item["addons"] = [dict(r) for r in cur.fetchall()]
+        item["addons"] = [dict(r) for r in fetched]
         cur.close(); conn.close()
         return jsonify(item), 201
 
@@ -106,6 +115,8 @@ def register_menu_routes(app):
         type_    = request.form.get("type")
         addons   = request.form.get("addons")          # JSON string or None
         image    = request.files.get("image")
+
+        print(f"[EDIT_ITEM] item_id={item_id}, addons={repr(addons)}")
 
         conn = get_db(); cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         if image:
@@ -121,11 +132,15 @@ def register_menu_routes(app):
             import json
             try:
                 addons_list = json.loads(addons)
-            except Exception:
+                print(f"[EDIT_ITEM] Parsed addons_list: {addons_list}")
+            except Exception as e:
+                print(f"[EDIT_ITEM] JSON parse error: {e}")
                 addons_list = []
+            print(f"[EDIT_ITEM] Deleting old addons and inserting {len(addons_list)} new ones")
             cur.execute("DELETE FROM menu_addons WHERE menu_item_id=%s", (item_id,))
             for addon in addons_list:
                 if addon.get("name", "").strip():
+                    print(f"[EDIT_ITEM] Inserting addon: {addon}")
                     cur.execute(
                         "INSERT INTO menu_addons (menu_item_id, name, price) VALUES (%s,%s,%s)",
                         (item_id, addon["name"].strip(), int(addon.get("price", 0)))
@@ -134,7 +149,9 @@ def register_menu_routes(app):
         cur.execute("SELECT * FROM menu_items WHERE id=%s", (item_id,))
         item = dict(cur.fetchone())
         cur.execute("SELECT * FROM menu_addons WHERE menu_item_id=%s ORDER BY id", (item_id,))
-        item["addons"] = [dict(r) for r in cur.fetchall()]
+        fetched = cur.fetchall()
+        print(f"[EDIT_ITEM] Fetched {len(fetched)} addons for item {item_id}")
+        item["addons"] = [dict(r) for r in fetched]
         conn.commit(); cur.close(); conn.close()
         return jsonify(item)
 
