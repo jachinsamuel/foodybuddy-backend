@@ -44,8 +44,10 @@ def init_db():
             token_type        TEXT    NOT NULL,
             status            TEXT    NOT NULL DEFAULT 'new',
             hidden_from_admin BOOLEAN NOT NULL DEFAULT FALSE,
+            special_instructions TEXT,
             created_at        TIMESTAMP DEFAULT NOW()
         );
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS hidden_from_admin BOOLEAN NOT NULL DEFAULT FALSE;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS special_instructions TEXT;
     """)
     conn.commit(); cur.close(); conn.close()

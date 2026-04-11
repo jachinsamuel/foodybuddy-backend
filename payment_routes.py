@@ -24,8 +24,8 @@ def register_payment_routes(app):
         expected=hmac.new(os.environ.get("RAZORPAY_KEY_SECRET").encode(),body.encode(),hashlib.sha256).hexdigest()
         if expected!=data["razorpay_signature"]: return jsonify({"status":"failed"}),400
         conn=get_db(); cur=conn.cursor()
-        cur.execute("INSERT INTO orders (order_id,payment_id,name,phone,items,total,token_type) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-            (data["razorpay_order_id"],data["razorpay_payment_id"],data["name"],data["phone"],psycopg2.extras.Json(data["items"]),data["total"],data["token_type"]))
+        cur.execute("INSERT INTO orders (order_id,payment_id,name,phone,items,total,token_type,special_instructions) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+            (data["razorpay_order_id"],data["razorpay_payment_id"],data["name"],data["phone"],psycopg2.extras.Json(data["items"]),data["total"],data["token_type"],data.get("specialInstructions","")))
         conn.commit(); cur.close(); conn.close()
         _send_wa_customer(data); _send_wa_canteen(data)
         return jsonify({"status":"success","order_id":data["razorpay_order_id"]})
@@ -38,10 +38,10 @@ def register_payment_routes(app):
 
         conn = get_db(); cur = conn.cursor()
         cur.execute(
-            "INSERT INTO orders (order_id, payment_id, name, phone, items, total, token_type, status) VALUES (%s,%s,%s,%s,%s,%s,%s,'new')",
+            "INSERT INTO orders (order_id, payment_id, name, phone, items, total, token_type, special_instructions, status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'new')",
             (order_id, "CASH", data["name"], data["phone"],
              psycopg2.extras.Json(data["items"]),
-             data["total"], token_type)
+             data["total"], token_type, data.get("specialInstructions",""))
         )
         conn.commit(); cur.close(); conn.close()
 
