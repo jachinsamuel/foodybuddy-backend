@@ -11,6 +11,16 @@ def register_admin_routes(app):
         cur.execute("SELECT * FROM orders WHERE status!='done' ORDER BY created_at DESC")
         orders=cur.fetchall(); cur.close(); conn.close(); return jsonify(orders)
 
+    @app.route("/admin/all-orders", methods=["GET"])
+    def get_all_orders():
+        conn=get_db(); cur=conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT * FROM orders 
+            WHERE DATE(created_at) = CURRENT_DATE
+            ORDER BY created_at DESC
+        """)
+        orders=cur.fetchall(); cur.close(); conn.close(); return jsonify(orders)
+
     @app.route("/admin/history", methods=["GET"])
     def get_history():
         conn=get_db(); cur=conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
