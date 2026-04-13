@@ -49,5 +49,14 @@ def init_db():
         );
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS hidden_from_admin BOOLEAN NOT NULL DEFAULT FALSE;
         ALTER TABLE orders ADD COLUMN IF NOT EXISTS special_instructions TEXT;
+        
+        -- Create indexes for faster queries
+        CREATE INDEX IF NOT EXISTS idx_orders_phone ON orders(phone);
+        CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+        CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+        CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(DATE(created_at));
+        CREATE INDEX IF NOT EXISTS idx_menu_category ON menu_items(category);
+        CREATE INDEX IF NOT EXISTS idx_menu_available ON menu_items(available);
+        CREATE INDEX IF NOT EXISTS idx_users_name ON users(LOWER(name));
     """)
     conn.commit(); cur.close(); conn.close()

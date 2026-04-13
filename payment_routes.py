@@ -7,7 +7,7 @@ import psycopg2.extras
 import random
 from config import razorpay_client
 from database import get_db
-from whatsapp import _send_wa_customer, _send_wa_canteen
+from whatsapp import _send_wa_customer
 
 def register_payment_routes(app):
     @app.route("/create-order", methods=["POST"])
@@ -27,7 +27,7 @@ def register_payment_routes(app):
         cur.execute("INSERT INTO orders (order_id,payment_id,name,phone,items,total,token_type,special_instructions) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
             (data["razorpay_order_id"],data["razorpay_payment_id"],data["name"],data["phone"],psycopg2.extras.Json(data["items"]),data["total"],data["token_type"],data.get("specialInstructions","")))
         conn.commit(); cur.close(); conn.close()
-        _send_wa_customer(data); _send_wa_canteen(data)
+        _send_wa_customer(data)
         return jsonify({"status":"success","order_id":data["razorpay_order_id"]})
 
     @app.route("/place-cash-order", methods=["POST"])
@@ -46,6 +46,5 @@ def register_payment_routes(app):
         conn.commit(); cur.close(); conn.close()
 
         _send_wa_customer({**data, "razorpay_order_id": order_id})
-        _send_wa_canteen({**data, "razorpay_order_id": order_id})
 
         return jsonify({"status": "success", "order_id": order_id})

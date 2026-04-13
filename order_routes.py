@@ -8,7 +8,7 @@ def register_order_routes(app):
     @app.route("/orders/history/<phone>", methods=["GET"])
     def get_user_history(phone):
         conn = get_db(); cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT * FROM orders WHERE phone = %s ORDER BY created_at DESC", (phone,))
+        cur.execute("SELECT * FROM orders WHERE phone = %s ORDER BY created_at DESC LIMIT 100", (phone,))
         orders = cur.fetchall(); cur.close(); conn.close()
         return jsonify(orders)
 
