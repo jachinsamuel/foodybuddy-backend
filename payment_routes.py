@@ -12,6 +12,18 @@ from whatsapp import _send_wa_customer
 def register_payment_routes(app):
     @app.route("/create-order", methods=["POST"])
     def create_order():
+        # Check if shop is open
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT is_open FROM shop_status ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        is_open = row[0] if row else True
+        cur.close()
+        conn.close()
+        
+        if not is_open:
+            return jsonify({"error": "Shop is currently closed"}), 400
+        
         data=request.json; amount=data["total"]*100
         from datetime import datetime
         order=razorpay_client.order.create({"amount":amount,"currency":"INR","receipt":f"fb_{data['name']}_{int(datetime.now().timestamp())}","notes":{"name":data["name"],"phone":data["phone"]}})
@@ -32,11 +44,22 @@ def register_payment_routes(app):
 
     @app.route("/place-cash-order", methods=["POST"])
     def place_cash_order():
+        # Check if shop is open
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT is_open FROM shop_status ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        is_open = row[0] if row else True
+        
+        if not is_open:
+            cur.close()
+            conn.close()
+            return jsonify({"error": "Shop is currently closed"}), 400
+        
         data = request.json
         order_id = f"FB{random.randint(10000,99999)}"
         token_type = data.get("token_type") or data.get("tokenType", "dine-in")
 
-        conn = get_db(); cur = conn.cursor()
         cur.execute(
             "INSERT INTO orders (order_id, payment_id, name, phone, items, total, token_type, special_instructions, status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'new')",
             (order_id, "CASH", data["name"], data["phone"],
