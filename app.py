@@ -8,6 +8,7 @@ from order_routes import register_order_routes
 from payment_routes import register_payment_routes
 from admin_routes import register_admin_routes
 from favorites_routes import register_favorites_routes
+from shop_status_routes import register_shop_status_routes
 
 app = Flask(__name__)
 CORS(app)
@@ -19,6 +20,7 @@ register_order_routes(app)
 register_payment_routes(app)
 register_admin_routes(app)
 register_favorites_routes(app)
+register_shop_status_routes(app)
 
 @app.route("/")
 def index(): 

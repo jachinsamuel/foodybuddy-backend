@@ -69,5 +69,13 @@ def init_db():
         );
         CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
         CREATE INDEX IF NOT EXISTS idx_favorites_item ON favorites(item_id);
+        
+        -- Shop status table
+        CREATE TABLE IF NOT EXISTS shop_status (
+            id SERIAL PRIMARY KEY,
+            is_open BOOLEAN NOT NULL DEFAULT TRUE,
+            updated_at TIMESTAMP DEFAULT NOW()
+        );
+        INSERT INTO shop_status (is_open) SELECT TRUE WHERE NOT EXISTS (SELECT 1 FROM shop_status);
     """)
     conn.commit(); cur.close(); conn.close()
