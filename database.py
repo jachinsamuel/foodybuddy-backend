@@ -76,6 +76,6 @@ def init_db():
             is_open BOOLEAN NOT NULL DEFAULT TRUE,
             updated_at TIMESTAMP DEFAULT NOW()
         );
-        INSERT INTO shop_status (is_open) SELECT TRUE WHERE NOT EXISTS (SELECT 1 FROM shop_status);
+        INSERT INTO shop_status (id, is_open) VALUES (1, TRUE) ON CONFLICT (id) DO NOTHING;
     """)
     conn.commit(); cur.close(); conn.close()

@@ -36,17 +36,16 @@ def register_shop_status_routes(app):
             conn = get_db()
             cur = conn.cursor()
             
-            # Update the shop status
+            # Try to update existing record
             cur.execute(
-                "UPDATE shop_status SET is_open = %s, updated_at = NOW() WHERE id = 1"
-                " ELSE INSERT INTO shop_status (is_open) VALUES (%s)",
-                (is_open, is_open)
+                "UPDATE shop_status SET is_open = %s, updated_at = NOW() WHERE id = 1",
+                (is_open,)
             )
             
             # If no rows updated, insert new
             if cur.rowcount == 0:
                 cur.execute(
-                    "INSERT INTO shop_status (is_open) VALUES (%s)",
+                    "INSERT INTO shop_status (id, is_open) VALUES (1, %s)",
                     (is_open,)
                 )
             
