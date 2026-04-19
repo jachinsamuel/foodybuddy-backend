@@ -58,5 +58,16 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_menu_category ON menu_items(category);
         CREATE INDEX IF NOT EXISTS idx_menu_available ON menu_items(available);
         CREATE INDEX IF NOT EXISTS idx_users_name ON users(LOWER(name));
+        
+        -- Favorites table
+        CREATE TABLE IF NOT EXISTS favorites (
+            id         SERIAL PRIMARY KEY,
+            user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            item_id    INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(user_id, item_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
+        CREATE INDEX IF NOT EXISTS idx_favorites_item ON favorites(item_id);
     """)
     conn.commit(); cur.close(); conn.close()
