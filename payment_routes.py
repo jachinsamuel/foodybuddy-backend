@@ -31,16 +31,51 @@ def register_payment_routes(app):
 
     @app.route("/verify-payment", methods=["POST"])
     def verify_payment():
-        data=request.json
-        body=data["razorpay_order_id"]+"|"+data["razorpay_payment_id"]
-        expected=hmac.new(os.environ.get("RAZORPAY_KEY_SECRET").encode(),body.encode(),hashlib.sha256).hexdigest()
-        if expected!=data["razorpay_signature"]: return jsonify({"status":"failed"}),400
-        conn=get_db(); cur=conn.cursor()
-        cur.execute("INSERT INTO orders (order_id,payment_id,name,phone,items,total,token_type,special_instructions) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-            (data["razorpay_order_id"],data["razorpay_payment_id"],data["name"],data["phone"],psycopg2.extras.Json(data["items"]),data["total"],data["token_type"],data.get("specialInstructions","")))
-        conn.commit(); cur.close(); conn.close()
-        _send_wa_customer(data)
-        return jsonify({"status":"success","order_id":data["razorpay_order_id"]})
+        try:
+            data = request.json
+            print(f"DEBUG: Received payment data: {list(data.keys())}")
+            
+            body = data["razorpay_order_id"] + "|" + data["razorpay_payment_id"]
+            expected = hmac.new(
+                os.environ.get("RAZORPAY_KEY_SECRET").encode(),
+                body.encode(),
+                hashlib.sha256
+            ).hexdigest()
+            
+            print(f"DEBUG: Expected signature: {expected}")
+            print(f"DEBUG: Received signature: {data['razorpay_signature']}")
+            
+            if expected != data["razorpay_signature"]:
+                print("ERROR: Signature verification failed!")
+                return jsonify({"status": "failed", "error": "Signature verification failed"}), 400
+            
+            print("DEBUG: Signature verified successfully")
+            
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO orders (order_id, payment_id, name, phone, items, total, token_type, special_instructions, status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'new')",
+                (data["razorpay_order_id"], data["razorpay_payment_id"], data["name"], data["phone"],
+                 psycopg2.extras.Json(data["items"]), data["total"], data.get("token_type", "dine-in"), 
+                 data.get("specialInstructions", ""))
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            print(f"DEBUG: Order created successfully: {data['razorpay_order_id']}")
+            
+            try:
+                _send_wa_customer(data)
+                print("DEBUG: WhatsApp notification sent")
+            except Exception as e:
+                print(f"WARNING: WhatsApp notification failed: {str(e)}")
+            
+            return jsonify({"status": "success", "order_id": data["razorpay_order_id"]}), 200
+            
+        except Exception as e:
+            print(f"ERROR in verify_payment: {str(e)}")
+            return jsonify({"status": "failed", "error": str(e)}), 500
 
     @app.route("/place-cash-order", methods=["POST"])
     def place_cash_order():
