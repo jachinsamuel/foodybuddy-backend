@@ -3,9 +3,18 @@ import psycopg2
 import psycopg2.extras
 
 def get_db():
-    return psycopg2.connect(os.environ.get("DATABASE_URL"))
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
+        raise Exception("DATABASE_URL not set. Set it to use database features.")
+    return psycopg2.connect(db_url)
 
 def init_db():
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
+        print("⚠️  DATABASE_URL not set. Skipping database initialization.")
+        print("    Calculator endpoints will work without database.")
+        return
+    
     conn = get_db(); cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
