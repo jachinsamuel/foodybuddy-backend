@@ -51,11 +51,14 @@ def register_payment_routes(app):
             
             print("DEBUG: Signature verified successfully")
             
+            # Use Razorpay order ID directly for online payments
+            order_id = data["razorpay_order_id"]
+            
             conn = get_db()
             cur = conn.cursor()
             cur.execute(
                 "INSERT INTO orders (order_id, payment_id, name, phone, items, total, token_type, special_instructions, status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'new')",
-                (data["razorpay_order_id"], data["razorpay_payment_id"], data["name"], data["phone"],
+                (order_id, data["razorpay_payment_id"], data["name"], data["phone"],
                  psycopg2.extras.Json(data["items"]), data["total"], data.get("token_type", "dine-in"), 
                  data.get("specialInstructions", ""))
             )
@@ -63,15 +66,15 @@ def register_payment_routes(app):
             cur.close()
             conn.close()
             
-            print(f"DEBUG: Order created successfully: {data['razorpay_order_id']}")
+            print(f"DEBUG: Order created successfully: {order_id}")
             
             try:
-                _send_wa_customer(data)
+                _send_wa_customer({**data, "razorpay_order_id": order_id})
                 print("DEBUG: WhatsApp notification sent")
             except Exception as e:
                 print(f"WARNING: WhatsApp notification failed: {str(e)}")
             
-            return jsonify({"status": "success", "order_id": data["razorpay_order_id"]}), 200
+            return jsonify({"status": "success", "order_id": order_id}), 200
             
         except Exception as e:
             print(f"ERROR in verify_payment: {str(e)}")
