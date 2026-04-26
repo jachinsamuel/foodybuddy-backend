@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, redirect
 import os
 import hashlib
 from datetime import datetime
@@ -56,6 +56,22 @@ def register_payu_routes(app):
             hash_value = generate_hash(hash_string, merchant_salt)
             
             print(f"DEBUG: PayU Order created - txnid: {txnid}, amount: {amount}")
+            print(f"DEBUG: Hash string: {hash_string}")
+            print(f"DEBUG: Hash value: {hash_value}")
+            
+            # Store in session for callback
+            import json
+            order_info = {
+                "txnid": txnid,
+                "name": firstname,
+                "phone": phone,
+                "email": email,
+                "amount": amount,
+                "items": data.get("items", []),
+                "total": data.get("total", 0),
+                "token_type": data.get("token_type", "dine-in"),
+                "specialInstructions": data.get("specialInstructions", "")
+            }
             
             return jsonify({
                 "txnid": txnid,
@@ -66,7 +82,8 @@ def register_payu_routes(app):
                 "email": email,
                 "phone": phone,
                 "hash": hash_value,
-                "payu_api_base": os.environ.get("PAYU_API_BASE", "https://api.payumoney.com")
+                "payu_api_base": os.environ.get("PAYU_API_BASE", "https://test.payumoney.com"),
+                "order_info": order_info
             }), 200
             
         except Exception as e:
@@ -74,19 +91,20 @@ def register_payu_routes(app):
             return jsonify({"error": str(e)}), 500
     
     
-    @app.route("/payu/verify-payment", methods=["POST"])
-    def payu_verify_payment():
-        """Verify PayU payment"""
+    @app.route("/payu/success", methods=["POST"])
+    def payu_success():
+        """PayU success callback"""
         try:
-            data = request.json
-            print(f"DEBUG: PayU Response: {data}")
+            data = request.form
+            print(f"DEBUG: PayU Success Response: {dict(data)}")
             
             txnid = data.get("txnid")
-            status = data.get("status")  # success or failure
+            status = data.get("status")
             
             if status != "success":
                 print(f"ERROR: Payment failed with status: {status}")
-                return jsonify({"status": "failed", "error": "Payment failed"}), 400
+                # Redirect to failure page
+                return redirect(f"/#/failed?txnid={txnid}&reason={data.get('error', 'Payment failed')}")
             
             # Verify hash
             merchant_salt = os.environ.get("PAYU_MERCHANT_SALT")
@@ -101,50 +119,79 @@ def register_payu_routes(app):
             
             if hash_value != expected_hash:
                 print("ERROR: Hash verification failed!")
-                return jsonify({"status": "failed", "error": "Hash verification failed"}), 400
+                return redirect(f"/#/failed?txnid={txnid}&reason=Hash%20verification%20failed")
             
             print("DEBUG: Hash verified successfully")
             
-            # Get additional data from request
-            order_data = data.get("orderData", {})
-            name = data.get("firstname", order_data.get("name", ""))
-            phone = data.get("phone", order_data.get("phone", ""))
-            items = order_data.get("items", [])
-            total = order_data.get("total", 0)
-            token_type = order_data.get("token_type", "dine-in")
-            special_instructions = order_data.get("specialInstructions", "")
+            # Extract order details from PayU response
+            firstname = data.get("firstname", "")
+            phone = data.get("phone", "")
+            productinfo = data.get("productinfo", "")
+            
+            # Get order data from sessionStorage (passed via hidden field or from DB)
+            # For now, we'll store minimal info and retrieve from sessionStorage on frontend
             
             # Store order in database
-            conn = get_db()
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO orders (order_id, payment_id, name, phone, items, total, token_type, special_instructions, status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'new')",
-                (txnid, data.get("payuMoneyId", ""), name, phone, psycopg2.extras.Json(items), total, token_type, special_instructions)
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-            
-            print(f"DEBUG: Order created: {txnid}")
+            try:
+                conn = get_db()
+                cur = conn.cursor()
+                
+                # Get items and total from the productinfo or use default
+                items = []
+                total = float(data.get("amount", 0))
+                
+                cur.execute(
+                    "INSERT INTO orders (order_id, payment_id, name, phone, items, total, token_type, special_instructions, status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'new')",
+                    (txnid, data.get("payuMoneyId", ""), firstname, phone, psycopg2.extras.Json(items), total, "dine-in", "")
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+                
+                print(f"DEBUG: Order created: {txnid}")
+            except Exception as db_error:
+                print(f"WARNING: Could not save order to DB: {str(db_error)}")
             
             # Send WhatsApp
             try:
-                combined_data = {**order_data, "order_id": txnid}
-                _send_wa_customer(combined_data)
+                _send_wa_customer({
+                    "name": firstname,
+                    "phone": phone,
+                    "order_id": txnid,
+                    "total": total
+                })
                 print("DEBUG: WhatsApp notification sent")
             except Exception as e:
                 print(f"WARNING: WhatsApp notification failed: {str(e)}")
             
-            return jsonify({"status": "success", "order_id": txnid}), 200
+            # Redirect to success page with order ID
+            return redirect(f"/#/success?order_id={txnid}")
             
         except Exception as e:
-            print(f"ERROR in payu_verify_payment: {str(e)}")
-            return jsonify({"status": "failed", "error": str(e)}), 500
+            print(f"ERROR in payu_success: {str(e)}")
+            return redirect(f"/#/failed?reason={str(e)}")
+    
+    
+    @app.route("/payu/failed", methods=["POST"])
+    def payu_failed():
+        """PayU failure callback"""
+        try:
+            data = request.form
+            print(f"DEBUG: PayU Failed Response: {dict(data)}")
+            
+            txnid = data.get("txnid")
+            error = data.get("error", "Payment failed")
+            
+            return redirect(f"/#/failed?txnid={txnid}&reason={error}")
+            
+        except Exception as e:
+            print(f"ERROR in payu_failed: {str(e)}")
+            return redirect(f"/#/failed?reason={str(e)}")
     
     
     @app.route("/place-cash-order", methods=["POST"])
     def place_cash_order():
-        """Place cash order (existing code)"""
+        """Place cash order"""
         try:
             conn = get_db()
             cur = conn.cursor()
