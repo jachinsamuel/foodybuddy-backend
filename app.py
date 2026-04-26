@@ -5,7 +5,7 @@ from database import init_db
 from auth_routes import register_auth_routes
 from menu_routes import register_menu_routes
 from order_routes import register_order_routes
-from payment_routes import register_payment_routes
+from payu_routes import register_payu_routes
 from admin_routes import register_admin_routes
 from favorites_routes import register_favorites_routes
 from shop_status_routes import register_shop_status_routes
@@ -17,7 +17,7 @@ CORS(app)
 register_auth_routes(app)
 register_menu_routes(app)
 register_order_routes(app)
-register_payment_routes(app)
+register_payu_routes(app)
 register_admin_routes(app)
 register_favorites_routes(app)
 register_shop_status_routes(app)
