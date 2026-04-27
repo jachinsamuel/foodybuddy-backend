@@ -51,8 +51,8 @@ def register_payu_routes(app):
                 print("ERROR: PayU credentials not configured!")
                 return jsonify({"error": "Payment gateway not configured"}), 500
             
-            # PayU hash format: key|txnid|amount|productinfo|firstname|email|phone|||||||||salt
-            hash_string = f"{merchant_key}|{txnid}|{amount}|{productinfo}|{firstname}|{email}|{phone}|||||||||{merchant_salt}"
+            # PayU hash format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
+            hash_string = f"{merchant_key}|{txnid}|{amount}|{productinfo}|{firstname}|{email}|||||||||||{merchant_salt}"
             hash_value = generate_hash(hash_string, merchant_salt)
             
             print(f"DEBUG: PayU Order created - txnid: {txnid}, amount: {amount}")
@@ -110,14 +110,15 @@ def register_payu_routes(app):
             merchant_salt = os.environ.get("PAYU_MERCHANT_SALT")
             hash_value = data.get("hash")
             
-            # PayU sends hash in format: salt|status|txnid
+            # Verify hash - response format: salt|status|txnid
             verify_string = f"{merchant_salt}|{status}|{txnid}"
-            expected_hash = generate_hash(verify_string, merchant_salt)
+            expected_hash_v1 = hashlib.sha512((verify_string + merchant_salt).encode()).hexdigest()
             
-            print(f"DEBUG: Expected hash: {expected_hash}")
+            print(f"DEBUG: Expected hash: {expected_hash_v1}")
             print(f"DEBUG: Received hash: {hash_value}")
             
-            if hash_value != expected_hash:
+            # PayU returns both v1 and v2 hashes, check against v1
+            if hash_value != expected_hash_v1:
                 print("ERROR: Hash verification failed!")
                 return redirect(f"/#/failed?txnid={txnid}&reason=Hash%20verification%20failed")
             
