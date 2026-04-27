@@ -8,10 +8,9 @@ import psycopg2.extras
 from database import get_db
 from whatsapp import _send_wa_customer
 
-def generate_hash(data, salt):
+def generate_hash(data):
     """Generate PayU hash signature using SHA-512"""
-    text = data + salt
-    hashObj = hashlib.sha512(text.encode('utf-8'))
+    hashObj = hashlib.sha512(data.encode('utf-8'))
     return hashObj.hexdigest()
 
 def register_payu_routes(app):
@@ -53,7 +52,7 @@ def register_payu_routes(app):
             
             # PayU hash format: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
             hash_string = f"{merchant_key}|{txnid}|{amount}|{productinfo}|{firstname}|{email}|||||||||||{merchant_salt}"
-            hash_value = generate_hash(hash_string, merchant_salt)
+            hash_value = generate_hash(hash_string)
             
             print(f"DEBUG: PayU Order created - txnid: {txnid}, amount: {amount}")
             print(f"DEBUG: Hash string: {hash_string}")
@@ -112,13 +111,12 @@ def register_payu_routes(app):
             
             # Verify hash - response format: salt|status|txnid
             verify_string = f"{merchant_salt}|{status}|{txnid}"
-            expected_hash_v1 = hashlib.sha512((verify_string + merchant_salt).encode()).hexdigest()
+            expected_hash = generate_hash(verify_string)
             
-            print(f"DEBUG: Expected hash: {expected_hash_v1}")
+            print(f"DEBUG: Expected hash: {expected_hash}")
             print(f"DEBUG: Received hash: {hash_value}")
             
-            # PayU returns both v1 and v2 hashes, check against v1
-            if hash_value != expected_hash_v1:
+            if hash_value != expected_hash:
                 print("ERROR: Hash verification failed!")
                 return redirect(f"/#/failed?txnid={txnid}&reason=Hash%20verification%20failed")
             
