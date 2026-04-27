@@ -82,7 +82,7 @@ def register_payu_routes(app):
                 "email": email,
                 "phone": phone,
                 "hash": hash_value,
-                "payu_api_base": os.environ.get("PAYU_API_BASE", "https://test.payumoney.com"),
+                "payu_api_base": os.environ.get("PAYU_API_BASE", "https://test.payu.in"),
                 "order_info": order_info
             }), 200
             
